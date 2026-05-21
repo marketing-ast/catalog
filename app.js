@@ -1,7 +1,7 @@
 "use strict";
 
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT2mxltvHlBrpAfIHJ5g9XEfRxmQckITPgY_muXeiL-pQtdSC5g0tWUkHo0iMB_FVRGz8ntdJ8rbm_E/pub?output=csv";
-const WHATSAPP_PHONE = "77001653540";
+const WHATSAPP_PHONE = "77785252162";
 const CACHE_KEY = "astore_products_v1";
 const CACHE_TIME_KEY = "astore_products_ts_v1";
 const CART_KEY = "astore_cart_v1";

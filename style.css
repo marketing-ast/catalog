@@ -472,21 +472,6 @@ h2 {
     display: none;
 }
 
-.product-card .counter-btn.plus {
-    grid-column: 1;
-    grid-row: 1;
-}
-
-.product-card .counter-value-wrap {
-    grid-column: 2;
-    grid-row: 1;
-}
-
-.product-card .counter-btn.minus {
-    grid-column: 3;
-    grid-row: 1;
-}
-
 .cart-header {
     display: flex;
     align-items: end;
@@ -526,6 +511,17 @@ h2 {
     grid-template-columns: 1fr;
     align-items: center;
     gap: 10px;
+}
+
+.cart-item .counter {
+    justify-self: end;
+    width: 150px;
+    grid-template-columns: 32px minmax(56px, 1fr) 32px;
+}
+
+.cart-item .counter-btn {
+    width: 32px;
+    height: 32px;
 }
 
 .cart-item-name {
