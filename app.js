@@ -52,17 +52,17 @@ function normalizeProducts(rawProducts) {
     return rawProducts
         .map((item, index) => {
             const id = Number.parseInt(String(item.id ?? index + 1).replace(/[^\d]/g, ""), 10) || index + 1;
-            const unit = normalizeUnit(item.unit);
+            const unitInfo = normalizeUnitInfo(item.unit);
             return {
                 id,
                 name: cleanText(item.name),
-                unit,
+                unit: unitInfo.unit,
                 category: cleanText(item.category) || "Другое",
                 availability: item.availability,
                 price: parsePrice(item.price),
                 sale: parseSaleValue(item.sale),
                 emoji: cleanText(item.emoji) || getProductEmoji(item.name, item.category),
-                quantityStep: getQuantityStep(unit),
+                quantityStep: unitInfo.quantityStep,
             };
         })
         .filter((item) => item.name && item.price > 0 && parseAvailabilityValue(item.availability));
@@ -72,15 +72,30 @@ function cleanText(value) {
     return String(value ?? "").trim();
 }
 
-function normalizeUnit(value) {
-    const unit = cleanText(value).toLowerCase();
-    if (unit.includes("кг") || unit.includes("kg")) return UNIT_KG;
-    if (unit.includes("шт") || unit.includes("pc") || unit.includes("pcs")) return UNIT_PC;
-    return unit || UNIT_PC;
-}
+function normalizeUnitInfo(value) {
+    const rawUnit = cleanText(value).toLowerCase().replace(",", ".");
+    const gramsMatch = rawUnit.match(/(\d+(?:\.\d+)?)\s*(г|g)(?![a-zа-яё])/i);
+    if (gramsMatch) {
+        const grams = Number.parseFloat(gramsMatch[1]);
+        if (Number.isFinite(grams) && grams > 0) {
+            return { unit: UNIT_KG, quantityStep: roundQty(grams / 1000) };
+        }
+    }
 
-function getQuantityStep(unit) {
-    return unit === UNIT_KG ? 0.1 : 1;
+    const numericUnit = Number.parseFloat(rawUnit);
+    if (Number.isFinite(numericUnit) && numericUnit > 0) {
+        return { unit: UNIT_KG, quantityStep: roundQty(numericUnit) };
+    }
+
+    if (rawUnit.includes("кг") || rawUnit.includes("kg")) {
+        return { unit: UNIT_KG, quantityStep: 1 };
+    }
+
+    if (rawUnit.includes("шт") || rawUnit.includes("pc") || rawUnit.includes("pcs")) {
+        return { unit: UNIT_PC, quantityStep: 1 };
+    }
+
+    return { unit: rawUnit || UNIT_PC, quantityStep: 1 };
 }
 
 function parsePrice(value) {
@@ -313,12 +328,13 @@ function changeCartItemQuantity(id, action) {
 }
 
 function roundQty(value) {
-    return Math.round(Number(value || 0) * 10) / 10;
+    return Math.round(Number(value || 0) * 1000) / 1000;
 }
 
 function formatQty(value) {
     const rounded = roundQty(value);
-    return Number.isInteger(rounded) ? String(rounded) : String(rounded).replace(".", ",");
+    if (Number.isInteger(rounded)) return String(rounded);
+    return rounded.toFixed(3).replace(/0+$/, "").replace(/\.$/, "").replace(".", ",");
 }
 
 function formatPrice(value) {
@@ -409,9 +425,9 @@ function loadCartFromStorage() {
 }
 
 function updateCartBadge() {
-    const total = roundQty(Object.values(cart).reduce((sum, qty) => sum + Number(qty || 0), 0));
+    const total = getCartItems().length;
     els.cartBadge.hidden = total <= 0;
-    els.cartBadge.textContent = formatQty(total);
+    els.cartBadge.textContent = String(total);
 }
 
 function setActiveScreen(screenId) {
