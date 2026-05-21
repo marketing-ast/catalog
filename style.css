@@ -468,7 +468,7 @@ h2 {
     display: none;
 }
 
-.counter-btn.plus {
+.counter-btn.minus {
     grid-column: 1;
     grid-row: 1;
 }
@@ -478,7 +478,7 @@ h2 {
     grid-row: 1;
 }
 
-.counter-btn.minus {
+.counter-btn.plus {
     grid-column: 3;
     grid-row: 1;
 }
