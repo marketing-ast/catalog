@@ -257,13 +257,12 @@ function renderProducts() {
 
 function renderProductCard(product) {
     const qty = cart[product.id] || 0;
-    const unitLabel = product.unit === UNIT_KG ? "весовой" : "штучный";
     return `
         <article class="product-card${qty > 0 ? " in-cart" : ""}${product.sale ? " sale-card" : ""}" data-id="${product.id}">
             <div class="product-topline">
                 <div class="product-emoji" aria-hidden="true">${escapeHtml(product.emoji)}</div>
                 <div>
-                    ${product.sale ? "<span class=\"sale-pill\">Акция</span>" : `<span class="unit-pill">${unitLabel}</span>`}
+                    ${product.sale ? "<span class=\"sale-pill\">Акция</span>" : ""}
                 </div>
             </div>
             <div class="product-info">
