@@ -442,9 +442,11 @@ h2 {
 
 .photo-lightbox-panel {
     position: relative;
-    display: grid;
-    width: min(82vw, 640px);
-    height: min(76vh, 620px);
+    display: inline-grid;
+    width: fit-content;
+    height: fit-content;
+    max-width: calc(100vw - 56px);
+    max-height: calc(100dvh - 76px);
     overflow: visible;
     border: 1px solid rgba(199, 218, 193, 0.86);
     border-radius: 8px;
@@ -458,20 +460,15 @@ h2 {
     place-items: center;
     overflow: hidden;
     border-radius: 8px;
-    background:
-        linear-gradient(45deg, rgba(240, 247, 236, 0.72) 25%, transparent 25%),
-        linear-gradient(-45deg, rgba(240, 247, 236, 0.72) 25%, transparent 25%),
-        linear-gradient(45deg, transparent 75%, rgba(240, 247, 236, 0.72) 75%),
-        linear-gradient(-45deg, transparent 75%, rgba(240, 247, 236, 0.72) 75%),
-        #fff;
-    background-position: 0 0, 0 10px, 10px -10px, -10px 0;
-    background-size: 20px 20px;
+    background: #fff;
 }
 
 .photo-lightbox-image {
     display: block;
-    max-width: 94%;
-    max-height: 94%;
+    width: auto;
+    height: auto;
+    max-width: min(82vw, 760px);
+    max-height: min(74dvh, 760px);
     transform-origin: center;
     transition: transform 160ms ease;
     object-fit: contain;
@@ -1094,8 +1091,13 @@ h2 {
     }
 
     .photo-lightbox-panel {
-        width: min(92vw, 520px);
-        height: min(68vh, 520px);
+        max-width: calc(100vw - 28px);
+        max-height: calc(100dvh - 64px);
+    }
+
+    .photo-lightbox-image {
+        max-width: calc(100vw - 32px);
+        max-height: 72dvh;
     }
 
     .photo-lightbox-close {

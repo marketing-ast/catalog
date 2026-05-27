@@ -504,7 +504,7 @@ function ensureLightbox() {
         <div class="photo-lightbox-backdrop" data-lightbox-close></div>
         <div class="photo-lightbox-panel" role="dialog" aria-modal="true" aria-label="Просмотр фото">
             <div class="photo-lightbox-stage">
-                <img class="photo-lightbox-image" alt="" width="1200" height="1200">
+                <img class="photo-lightbox-image" alt="">
             </div>
             <button class="photo-lightbox-close" type="button" aria-label="Закрыть фото">×</button>
         </div>
@@ -518,8 +518,14 @@ function openPhotoLightbox(imageUrl, name) {
     const image = lightbox.querySelector(".photo-lightbox-image");
     lightboxZoom = 1;
     lightboxProductName = name || "";
-    image.src = imageUrl;
     image.alt = lightboxProductName;
+    image.removeAttribute("width");
+    image.removeAttribute("height");
+    image.onload = () => {
+        image.setAttribute("width", image.naturalWidth);
+        image.setAttribute("height", image.naturalHeight);
+    };
+    image.src = imageUrl;
     applyLightboxZoom();
     lightbox.hidden = false;
     document.body.classList.add("photo-lightbox-open");
@@ -530,7 +536,9 @@ function closePhotoLightbox() {
     const lightbox = $("#photo-lightbox");
     if (!lightbox || lightbox.hidden) return;
     lightbox.hidden = true;
-    lightbox.querySelector(".photo-lightbox-image").src = "";
+    const image = lightbox.querySelector(".photo-lightbox-image");
+    image.onload = null;
+    image.src = "";
     document.body.classList.remove("photo-lightbox-open");
 }
 
