@@ -8,6 +8,9 @@ const CART_KEY = "astore_cart_v1";
 const ACTIVE_SCREEN_KEY = "astore_active_screen";
 const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 const CART_TTL_MS = 24 * 60 * 60 * 1000;
+const LIGHTBOX_MIN_ZOOM = 1;
+const LIGHTBOX_MAX_ZOOM = 3;
+const LIGHTBOX_ZOOM_STEP = 0.18;
 const UNIT_KG = "кг";
 const UNIT_PC = "шт";
 
@@ -16,6 +19,8 @@ let productsById = new Map(products.map((item) => [item.id, item]));
 let cart = {};
 let activeCategory = null;
 let refreshInProgress = false;
+let lightboxZoom = 1;
+let lightboxProductName = "";
 
 const $ = (selector) => document.querySelector(selector);
 const els = {
@@ -287,28 +292,40 @@ function renderProductMedia(product) {
     if (!imageUrl) {
         return `<div class="product-emoji" aria-hidden="true">${escapeHtml(product.emoji)}</div>`;
     }
+    const fullImageUrl = getProductImageUrl(product.image, 1200);
 
     return `
-        <img
-            class="product-image"
-            src="${escapeHtml(imageUrl)}"
-            alt=""
-            loading="lazy"
-            decoding="async"
-            onerror="this.hidden=true;this.nextElementSibling.hidden=false;"
+        <button
+            class="product-image-button"
+            type="button"
+            data-image-url="${escapeHtml(imageUrl)}"
+            data-full-image-url="${escapeHtml(fullImageUrl)}"
+            data-image-name="${escapeHtml(product.name)}"
+            aria-label="Открыть фото ${escapeHtml(product.name)}"
         >
+            <img
+                class="product-image"
+                src="${escapeHtml(imageUrl)}"
+                alt=""
+                width="480"
+                height="480"
+                loading="lazy"
+                decoding="async"
+                onerror="this.closest('.product-image-button').hidden=true;this.closest('.product-image-button').nextElementSibling.hidden=false;"
+            >
+        </button>
         <div class="product-emoji product-image-fallback" aria-hidden="true" hidden>${escapeHtml(product.emoji)}</div>
     `;
 }
 
-function getProductImageUrl(value) {
+function getProductImageUrl(value, size = 480) {
     const raw = cleanText(value);
     if (!raw) return "";
 
     const driveMatch = raw.match(/(?:\/d\/|[?&]id=)([-\w]{20,})/);
     const fileId = driveMatch ? driveMatch[1] : raw.match(/^[-\w]{20,}$/) ? raw : "";
     if (fileId) {
-        return `https://drive.google.com/thumbnail?id=${encodeURIComponent(fileId)}&sz=w480`;
+        return `https://drive.google.com/thumbnail?id=${encodeURIComponent(fileId)}&sz=w${size}`;
     }
 
     if (/^https?:\/\//i.test(raw)) return raw;
@@ -475,6 +492,60 @@ function escapeHtml(value) {
         .replaceAll("'", "&#039;");
 }
 
+function ensureLightbox() {
+    let lightbox = $("#photo-lightbox");
+    if (lightbox) return lightbox;
+
+    lightbox = document.createElement("div");
+    lightbox.id = "photo-lightbox";
+    lightbox.className = "photo-lightbox";
+    lightbox.hidden = true;
+    lightbox.innerHTML = `
+        <div class="photo-lightbox-backdrop" data-lightbox-close></div>
+        <div class="photo-lightbox-panel" role="dialog" aria-modal="true" aria-label="Просмотр фото">
+            <div class="photo-lightbox-stage">
+                <img class="photo-lightbox-image" alt="" width="1200" height="1200">
+            </div>
+            <button class="photo-lightbox-close" type="button" aria-label="Закрыть фото">×</button>
+        </div>
+    `;
+    document.body.append(lightbox);
+    return lightbox;
+}
+
+function openPhotoLightbox(imageUrl, name) {
+    const lightbox = ensureLightbox();
+    const image = lightbox.querySelector(".photo-lightbox-image");
+    lightboxZoom = 1;
+    lightboxProductName = name || "";
+    image.src = imageUrl;
+    image.alt = lightboxProductName;
+    applyLightboxZoom();
+    lightbox.hidden = false;
+    document.body.classList.add("photo-lightbox-open");
+    lightbox.querySelector(".photo-lightbox-close").focus();
+}
+
+function closePhotoLightbox() {
+    const lightbox = $("#photo-lightbox");
+    if (!lightbox || lightbox.hidden) return;
+    lightbox.hidden = true;
+    lightbox.querySelector(".photo-lightbox-image").src = "";
+    document.body.classList.remove("photo-lightbox-open");
+}
+
+function applyLightboxZoom() {
+    const image = $(".photo-lightbox-image");
+    if (!image) return;
+    image.style.transform = `scale(${lightboxZoom})`;
+    image.style.cursor = lightboxZoom > 1 ? "zoom-out" : "zoom-in";
+}
+
+function changeLightboxZoom(delta) {
+    lightboxZoom = Math.min(LIGHTBOX_MAX_ZOOM, Math.max(LIGHTBOX_MIN_ZOOM, lightboxZoom + delta));
+    applyLightboxZoom();
+}
+
 function bindEvents() {
     els.categoriesBar.addEventListener("click", (event) => {
         const button = event.target.closest(".cat-chip");
@@ -485,6 +556,12 @@ function bindEvents() {
     });
 
     els.productsList.addEventListener("click", (event) => {
+        const imageButton = event.target.closest(".product-image-button");
+        if (imageButton) {
+            openPhotoLightbox(imageButton.dataset.fullImageUrl || imageButton.dataset.imageUrl, imageButton.dataset.imageName);
+            return;
+        }
+
         const button = event.target.closest(".counter-btn");
         if (!button) return;
         changeCartItemQuantity(button.dataset.id, button.dataset.action);
@@ -524,6 +601,31 @@ function bindEvents() {
         setTimeout(() => {
             els.copyCartBtn.textContent = oldText;
         }, 1200);
+    });
+
+    document.addEventListener("click", (event) => {
+        const closeTarget = event.target.closest("[data-lightbox-close], .photo-lightbox-close");
+        if (closeTarget) {
+            closePhotoLightbox();
+            return;
+        }
+
+        const lightboxImage = event.target.closest(".photo-lightbox-image");
+        if (lightboxImage) {
+            lightboxZoom = lightboxZoom > 1 ? 1 : 2;
+            applyLightboxZoom();
+        }
+    });
+
+    document.addEventListener("wheel", (event) => {
+        const lightbox = $("#photo-lightbox");
+        if (!lightbox || lightbox.hidden || !event.target.closest(".photo-lightbox-panel")) return;
+        event.preventDefault();
+        changeLightboxZoom(event.deltaY < 0 ? LIGHTBOX_ZOOM_STEP : -LIGHTBOX_ZOOM_STEP);
+    }, { passive: false });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closePhotoLightbox();
     });
 }
 

@@ -60,6 +60,10 @@ test("renders product image instead of emoji when image is present", () => {
     });
 
     assert.match(html, /class="product-image"/);
+    assert.match(html, /class="product-image-button"/);
+    assert.match(html, /width="480"/);
+    assert.match(html, /height="480"/);
     assert.match(html, /thumbnail\?id=1AKuCuLUPhsVcbzotN0howX7A6H-iG1GJ&amp;sz=w480/);
+    assert.match(html, /thumbnail\?id=1AKuCuLUPhsVcbzotN0howX7A6H-iG1GJ&amp;sz=w1200/);
     assert.doesNotMatch(html, /product-emoji" aria-hidden="true">🟢/);
 });
