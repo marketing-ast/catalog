@@ -29,7 +29,7 @@
 
 html {
     min-height: 100%;
-    overflow-x: hidden;
+    overflow-x: clip;
     background: var(--bg);
     color: var(--ink);
     font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
@@ -40,7 +40,7 @@ html {
 body {
     min-height: 100dvh;
     margin: 0;
-    overflow-x: hidden;
+    overflow-x: clip;
     padding: 0 0 calc(var(--nav-height) + env(safe-area-inset-bottom) + 18px);
     background:
         linear-gradient(180deg, rgba(239, 249, 235, 0.98), rgba(255, 253, 248, 0.98) 310px),
@@ -243,12 +243,13 @@ h2 {
 
 .sticky-filter {
     position: sticky;
-    top: 0;
-    z-index: 60;
+    top: env(safe-area-inset-top, 0);
+    z-index: 200;
     margin: 0 -16px;
     padding: 8px 16px;
     background: rgba(247, 251, 244, 0.94);
     border-bottom: 1px solid rgba(220, 232, 214, 0.65);
+    box-shadow: 0 10px 22px rgba(35, 91, 50, 0.06);
     backdrop-filter: blur(12px);
 }
 
