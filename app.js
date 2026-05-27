@@ -54,6 +54,7 @@ function normalizeProducts(rawProducts) {
                 price: parsePrice(item.price),
                 sale: parseSaleValue(item.sale),
                 emoji: cleanText(item.emoji) || getProductEmoji(item.name, item.category),
+                image: cleanText(item.image),
                 quantityStep: unitInfo.quantityStep,
             };
         })
@@ -260,7 +261,7 @@ function renderProductCard(product) {
     return `
         <article class="product-card${qty > 0 ? " in-cart" : ""}${product.sale ? " sale-card" : ""}" data-id="${product.id}">
             <div class="product-topline">
-                <div class="product-emoji" aria-hidden="true">${escapeHtml(product.emoji)}</div>
+                ${renderProductMedia(product)}
                 <div>
                     ${product.sale ? "<span class=\"sale-pill\">Акция</span>" : ""}
                 </div>
@@ -279,6 +280,39 @@ function renderProductCard(product) {
             </div>
         </article>
     `;
+}
+
+function renderProductMedia(product) {
+    const imageUrl = getProductImageUrl(product.image);
+    if (!imageUrl) {
+        return `<div class="product-emoji" aria-hidden="true">${escapeHtml(product.emoji)}</div>`;
+    }
+
+    return `
+        <img
+            class="product-image"
+            src="${escapeHtml(imageUrl)}"
+            alt=""
+            loading="lazy"
+            decoding="async"
+            onerror="this.hidden=true;this.nextElementSibling.hidden=false;"
+        >
+        <div class="product-emoji product-image-fallback" aria-hidden="true" hidden>${escapeHtml(product.emoji)}</div>
+    `;
+}
+
+function getProductImageUrl(value) {
+    const raw = cleanText(value);
+    if (!raw) return "";
+
+    const driveMatch = raw.match(/(?:\/d\/|[?&]id=)([-\w]{20,})/);
+    const fileId = driveMatch ? driveMatch[1] : raw.match(/^[-\w]{20,}$/) ? raw : "";
+    if (fileId) {
+        return `https://drive.google.com/thumbnail?id=${encodeURIComponent(fileId)}&sz=w480`;
+    }
+
+    if (/^https?:\/\//i.test(raw)) return raw;
+    return "";
 }
 
 function changeCartItemQuantity(id, action) {
@@ -332,7 +366,7 @@ function renderCart() {
     els.cartItems.innerHTML = items.map((item) => `
         <div class="cart-item">
             <div>
-                <span class="cart-item-name">${escapeHtml(item.emoji)} ${escapeHtml(item.name)}</span>
+                <span class="cart-item-name">${escapeHtml(item.name)}</span>
                 <span class="cart-item-price">${formatPrice(item.price * item.qty)}</span>
             </div>
             <div class="counter">
